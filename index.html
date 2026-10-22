@@ -33,10 +33,23 @@
             width: 100%;
             box-sizing: border-box;
         }
-        .setup-screen { max-width: 500px; text-align: center; }
-        .input-group { margin: 15px 0; text-align: left; }
-        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .input-group input { width: 100%; padding: 8px; border-radius: 6px; border: none; box-sizing: border-box; }
+        .setup-screen { max-width: 600px; text-align: center; }
+        .input-card {
+            background: rgba(0,0,0,0.2);
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .input-group-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .input-group-row div { flex: 1; text-align: left; }
+        .input-group-row label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 14px; }
+        .input-group-row input { width: 100%; padding: 8px; border-radius: 6px; border: none; box-sizing: border-box; }
+        
         button {
             background-color: #2ecc71; color: white; border: none; padding: 10px 20px;
             font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;
@@ -51,9 +64,6 @@
         .hidden { display: none !important; }
         
         .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #34495e; padding-bottom: 15px; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; width: 100%; }
-        .tab { background-color: #34495e; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .tab.active { background-color: #3498db; }
         
         .main-layout { display: flex; gap: 30px; flex-direction: column; align-items: center; width: 100%; }
         .setup-area { display: flex; gap: 20px; width: 100%; justify-content: center; align-items: flex-start; }
@@ -113,27 +123,25 @@
 
     <div id="setupScreen" class="setup-screen">
         <h3>遊戲初始化設定</h3>
-        <div class="input-group">
-            <label for="playerCount">選擇對戰組數 (2~6人)：</label>
-            <input type="number" id="playerCount" min="2" max="6" value="3" onchange="generateBudgetInputs()">
+        <div style="margin-bottom: 15px; text-align: left;">
+            <label for="playerCount" style="font-weight: bold; display: block; margin-bottom: 5px;">選擇對戰組數 (2~6人)：</label>
+            <input type="number" id="playerCount" min="2" max="6" value="3" onchange="generateInputs()" style="width: 100%; padding: 8px; border-radius: 6px; border: none; box-sizing: border-box;">
         </div>
-        <div id="budgetInputsContainer"></div>
-        <button onclick="startGameSetup()">進入主持人配置模式</button>
+        <div id="inputsContainer"></div>
+        <button onclick="startGameSetup()" style="width: 100%; margin-top: 10px;">進入軍備配置模式</button>
     </div>
 
     <div id="gameScreen" class="game-screen hidden">
         <div class="game-header">
             <div>
-                <span id="gamePhaseText" style="font-size: 20px; color: #f1c40f; font-weight: bold;">[ 主持人配置階段 ]</span>
+                <span id="gamePhaseText" style="font-size: 20px; color: #f1c40f; font-weight: bold;">[ 配置階段 - <span id="currentSetupTeamName" style="color: #3498db;">第 1 組</span> ]</span>
                 <div id="turnIndicator" class="status-bar hidden">目前輪到：<span id="currentTurnName" style="color:#e74c3c;">-</span> 攻擊</div>
             </div>
             <div>
-                <button id="actionBtn" onclick="switchPhase()" style="background-color: #e67e22;">完成配置，開始戰鬥！</button>
+                <button id="actionBtn" onclick="handleNextSetupStep()" style="background-color: #3498db;">下一組 ➔</button>
                 <button id="restartBtn" class="btn-restart hidden" onclick="confirmRestart()">🔄 重新開始 (保留配置)</button>
             </div>
         </div>
-
-        <div id="teamTabs" class="tabs"></div>
 
         <div class="main-layout">
             <div id="setupArea" class="setup-area">
@@ -172,13 +180,13 @@
         </div>
 
         <div class="log-box" id="logBox">
-            <div class="log-entry">系統：遊戲已初始化，請主持人幫各組配置船艦（上限 8 個道具）。</div>
+            <div class="log-entry">系統：遊戲已初始化，請依序幫各組配置船艦（上限 8 個道具）。</div>
         </div>
     </div>
 
     <div id="overlayScreen" class="overlay hidden">
         <h2 id="overlayTitle">特殊事件</h2>
-        <p id="overlayDesc" style="font-size: 20px; max-width: 600px; white-space: pre-line;"></p>
+        <p id="overlayDesc" style="font-size: 20px; max-width: 600px; white-space: pre-line; line-height: 1.6;"></p>
         <div id="overlayActionArea" style="margin-top: 20px;"></div>
     </div>
 
@@ -192,7 +200,7 @@
 
         let totalTeams = 3;
         let teams = {}; 
-        let activeTabTeamId = 1; 
+        let activeSetupTeamIdx = 1; 
         let currentOrientation = 'H';
         let isBattlePhase = false;
         let currentTurnTeamId = 1;
@@ -202,29 +210,38 @@
         const rowLabels = ['1', '2', '3', '4', '5', '6'];
         const colLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
 
-        function generateBudgetInputs() {
+        function generateInputs() {
             const count = parseInt(document.getElementById('playerCount').value);
-            const container = document.getElementById('budgetInputsContainer');
+            const container = document.getElementById('inputsContainer');
             container.innerHTML = '';
             for(let i = 1; i <= count; i++) {
                 container.innerHTML += `
-                    <div class="input-group">
-                        <label for="budget_t${i}">第 ${i} 組 初始總預算 ($)：</label>
-                        <input type="number" id="budget_t${i}" min="0" value="${150 + (i*10)}">
+                    <div class="input-card">
+                        <div class="input-group-row">
+                            <div>
+                                <label for="name_t${i}">第 ${i} 組 名稱：</label>
+                                <input type="text" id="name_t${i}" value="第 ${i} 組">
+                            </div>
+                            <div>
+                                <label for="budget_t${i}">初始預算 ($)：</label>
+                                <input type="number" id="budget_t${i}" min="0" value="${150 + (i*10)}">
+                            </div>
+                        </div>
                     </div>
                 `;
             }
         }
-        window.onload = generateBudgetInputs;
+        window.onload = generateInputs;
 
         function startGameSetup() {
             totalTeams = parseInt(document.getElementById('playerCount').value);
             
             for(let i = 1; i <= totalTeams; i++) {
+                const teamName = document.getElementById(`name_t${i}`).value.trim() || `第 ${i} 組`;
                 const initBudget = parseInt(document.getElementById(`budget_t${i}`).value) || 200;
                 teams[i] = {
                     id: i,
-                    name: `第 ${i} 組`,
+                    name: teamName,
                     budget: initBudget,
                     itemCount: 0,
                     eliminated: false,
@@ -237,31 +254,36 @@
             document.getElementById('setupScreen').classList.add('hidden');
             document.getElementById('gameScreen').classList.remove('hidden');
             
-            buildTabs();
+            activeSetupTeamIdx = 1;
+            updateSetupHeader();
             renderSetupBoard();
             updateStatusDisplay();
         }
 
-        function buildTabs() {
-            const tabsContainer = document.getElementById('teamTabs');
-            tabsContainer.innerHTML = '';
-            for(let i = 1; i <= totalTeams; i++) {
-                const tab = document.createElement('div');
-                tab.className = `tab ${i === activeTabTeamId ? 'active' : ''}`;
-                tab.id = `tab_t${i}`;
-                tab.innerText = teams[i].name;
-                tab.onclick = () => switchTab(i);
-                tabsContainer.appendChild(tab);
+        function updateSetupHeader() {
+            const currentTeam = teams[activeSetupTeamIdx];
+            document.getElementById('currentSetupTeamName').innerText = currentTeam.name;
+            const actionBtn = document.getElementById('actionBtn');
+            
+            if (activeSetupTeamIdx < totalTeams) {
+                actionBtn.innerText = "下一組 ➔";
+                actionBtn.style.backgroundColor = "#3498db";
+            } else {
+                actionBtn.innerText = "完成配置，開始戰鬥！ 💥";
+                actionBtn.style.backgroundColor = "#e67e22";
             }
         }
 
-        function switchTab(teamId) {
-            if (isBattlePhase) return;
-            activeTabTeamId = teamId;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(`tab_t${teamId}`).classList.add('active');
-            renderSetupBoard();
-            updateStatusDisplay();
+        function handleNextSetupStep() {
+            if (activeSetupTeamIdx < totalTeams) {
+                activeSetupTeamIdx++;
+                updateSetupHeader();
+                renderSetupBoard();
+                updateStatusDisplay();
+                log(`🔧 切換至 [${teams[activeSetupTeamIdx].name}] 進行佈署。`);
+            } else {
+                switchPhase();
+            }
         }
 
         function setOrientation(dir) {
@@ -271,7 +293,7 @@
         }
 
         function updateStatusDisplay() {
-            const currentTeam = teams[activeTabTeamId];
+            const currentTeam = teams[activeSetupTeamIdx];
             document.getElementById('currentBudget').innerText = `$${currentTeam.budget}`;
             document.getElementById('currentItemCount').innerText = currentTeam.itemCount;
         }
@@ -329,7 +351,7 @@
             board.className = 'board setup-mode';
             board.setAttribute('ondragover', 'allowDrop(event)');
 
-            const currentTeam = teams[activeTabTeamId];
+            const currentTeam = teams[activeSetupTeamIdx];
 
             for(let r = 0; r < 6; r++) {
                 for(let c = 0; c < 6; c++) {
@@ -347,21 +369,21 @@
                         cell.ondragstart = (ev) => {
                             ev.dataTransfer.setData('text/plain', JSON.stringify({
                                 source: 'board',
-                                teamId: activeTabTeamId,
+                                teamId: activeSetupTeamIdx,
                                 itemId: item.id
                             }));
                         };
 
                         cell.onclick = (ev) => {
                             ev.stopPropagation();
-                            removePlacedItem(activeTabTeamId, item.id);
+                            removePlacedItem(activeSetupTeamIdx, item.id);
                             renderSetupBoard();
                             updateStatusDisplay();
                         };
 
                         cell.oncontextmenu = (ev) => {
                             ev.preventDefault();
-                            removePlacedItem(activeTabTeamId, item.id);
+                            removePlacedItem(activeSetupTeamIdx, item.id);
                             renderSetupBoard();
                             updateStatusDisplay();
                         };
@@ -486,7 +508,7 @@
 
             const startR = parseInt(cell.dataset.row);
             const startC = parseInt(cell.dataset.col);
-            const currentTeam = teams[activeTabTeamId];
+            const currentTeam = teams[activeSetupTeamIdx];
 
             if (currentTeam.itemCount >= 8) {
                 alert(`❌ 部署失敗：${currentTeam.name} 已達道具上限 8 個！`);
@@ -526,7 +548,7 @@
             currentTeam.budget -= data.cost;
             currentTeam.itemCount += 1;
 
-            log(`🔧 主持人幫 [${currentTeam.name}] 部署了 ${ITEM_CONFIGS[data.type].name}，花費 $${data.cost}`);
+            log(`🔧 幫 [${currentTeam.name}] 部署了 ${ITEM_CONFIGS[data.type].name}，花費 $${data.cost}`);
             
             renderSetupBoard();
             updateStatusDisplay();
@@ -538,7 +560,6 @@
                 isBattlePhase = true;
                 document.getElementById('gamePhaseText').innerText = "💥 [ 戰鬥對戰階段 ]";
                 document.getElementById('gamePhaseText').style.color = "#e74c3c";
-                document.getElementById('teamTabs').classList.add('hidden');
                 document.getElementById('setupArea').classList.add('hidden');
                 document.getElementById('actionBtn').classList.add('hidden');
                 document.getElementById('restartBtn').classList.remove('hidden');
@@ -679,8 +700,11 @@
                         victimId: targetTeam.id,
                         attackerId: attacker.id
                     };
-                    showOverlay("⚔️ 鐵甲巨艦死鬥反擊", `[${targetTeam.name}] 的軍艦被擊沉！觸發殊死復仇：
-請受害者 [${targetTeam.name}] 立刻在畫面上點選進攻者 [${attacker.name}] 盤面的任一格進行反向轟炸！`, null, true);
+                    showOverlay("⚔️ 鐵甲巨艦死鬥反擊", `[${targetTeam.name}] 的軍艦被擊沉！觸發殊死復仇機制！
+
+請點擊下方【繼續】按鈕，然後由 [${targetTeam.name}] 的玩家直接在畫面上點擊攻擊者 [${attacker.name}] 的任一盤面海域進行反向轟炸！`, () => {
+                        // 點選繼續後關閉 overlay，留在復仇狀態等待點選
+                    });
                     return;
                 }
             }
@@ -788,20 +812,15 @@
                 btnContainer.appendChild(btnConfirm);
                 btnContainer.appendChild(btnCancel);
                 area.appendChild(btnContainer);
-            } else if (!isRevenge) {
+            } else {
                 const btn = document.createElement('button');
-                btn.innerText = "確認收悉";
+                btn.innerText = "繼續";
+                btn.style.backgroundColor = "#2ecc71";
                 btn.onclick = () => {
                     screen.classList.add('hidden');
                     if(callback) callback();
                 };
                 area.appendChild(btn);
-            } else {
-                const tip = document.createElement('span');
-                tip.innerText = "🚨 請由受害者玩家操作，直接在並排畫面上點選進攻方盤面的未開火網格！";
-                tip.style.color = "#ff7675";
-                tip.style.fontWeight = "bold";
-                area.appendChild(tip);
             }
             screen.classList.remove('hidden');
         }
