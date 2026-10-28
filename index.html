@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>極限心機：微型海戰桌遊</title>
+    <title>掠海稱王：微型海戰桌遊</title>
     <style>
         :root {
             --bg-color: #1a252f;
@@ -81,6 +81,18 @@
             font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;
         }
         button:hover { background-color: #27ae60; transform: translateY(-2px); }
+        .btn-prev-setup {
+            background-color: #9b59b6; color: white; border: none; padding: 8px 14px;
+            font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;
+            margin-right: 5px;
+        }
+        .btn-prev-setup:hover { background-color: #8e44ad; transform: translateY(-2px); }
+        .btn-undo {
+            background-color: #f39c12; color: white; border: none; padding: 8px 14px;
+            font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;
+            margin-left: 5px;
+        }
+        .btn-undo:hover { background-color: #d35400; transform: translateY(-2px); }
         .btn-restart {
             background-color: #e67e22; color: white; border: none; padding: 8px 14px;
             font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;
@@ -99,7 +111,6 @@
         
         .main-layout { display: flex; gap: 20px; flex-direction: column; align-items: center; width: 100%; }
         
-        /* 手機與電腦自適應 (RWD) 版面：手機時商店上、棋盤下 */
         .setup-area { display: flex; flex-direction: column; gap: 20px; width: 100%; justify-content: center; align-items: center; }
         @media (min-width: 768px) {
             .setup-area { flex-direction: row; align-items: flex-start; }
@@ -119,7 +130,6 @@
         .orient-btn { flex: 1; background: #7f8c8d; padding: 6px; font-size: 13px; border-radius: 4px; color: white; cursor: pointer; border: none; }
         .orient-btn.active { background: #3498db; }
         
-        /* 戰鬥畫面在手機時垂直排列 */
         .battle-area { display: flex; gap: 20px; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
         @media (min-width: 992px) {
             .battle-area { flex-direction: row; flex-wrap: wrap; }
@@ -162,6 +172,7 @@
         .cell.hit { background-color: #c0392b !important; pointer-events: none; }
         .cell.miss { background-color: #1abc9c !important; pointer-events: none; }
         .cell.scouted { background-color: #27ae60 !important; }
+        .cell.revealed-end { background-color: #34495e !important; }
         
         .status-bar { font-size: 14px; margin: 4px 0; font-weight: bold; background: #111; padding: 5px 10px; border-radius: 6px; display: inline-block; text-align: center;}
         .log-box { width: 100%; max-height: 130px; overflow-y: auto; background: #111; padding: 8px; border-radius: 6px; margin-top: 15px; font-family: monospace; font-size: 13px; box-sizing: border-box;}
@@ -174,7 +185,7 @@
 </head>
 <body>
 
-    <h1>⚓ 極限心機：微型海戰桌遊 ⚓</h1>
+    <h1>⚓ 掠海稱王：微型海戰桌遊 ⚓</h1>
 
     <!-- 0. 遊戲起始規則畫面 -->
     <div id="welcomeScreen" class="welcome-screen">
@@ -186,17 +197,17 @@
 
             <h3>🔧 2. 軍備種類與花費</h3>
             <ul>
-                <li>📡 <strong>偵查哨 (1x1)</strong>：$20 | 基礎點位掩體。</li>
-                <li>🛶 <strong>偵查艦 (2x1)</strong>：$25 | 被徹底擊沉時，觸發【偵查天眼】，該艦佔據的 2 個座標將對全場開啟綠底透視情報。</li>
-                <li>🚢 <strong>軍艦 (3x1)</strong>：$40 | 被徹底擊沉時，受害者可發動【死鬥反擊】，對擊沉者進行一次反向砲擊！</li>
-                <li>🚀 <strong>魚雷 (1x1)</strong>：$15 | 被敵人砲擊踩中時，會引發連鎖反應，導致攻擊者自身相同座標遭連帶自爆！</li>
+                <li>📡 <strong>哨塔 (1x1)</strong>：$120 | 基礎點位掩體。</li>
+                <li>🛶 <strong>偵查艦 (2x1)</strong>：$150 | 被徹底擊沉時，觸發【偵查天眼】，該艦佔據的 2 個座標將對全場開啟綠底透視情報。</li>
+                <li>🚢 <strong>軍艦 (3x1)</strong>：$250 | 被徹底擊沉時，受害者可發動【死鬥反擊】，對擊沉者進行一次反向砲擊！</li>
+                <li>🚀 <strong>魚雷 (1x1)</strong>：$100 | 被敵人砲擊踩中時，會引發連鎖反應，導致攻擊者自身相同座標遭連帶自爆！</li>
             </ul>
 
             <h3>🎯 3. 遊戲流程說明</h3>
             <ul>
-                <li><strong>配置階段：</strong>每組初始預算均為 $100，依序選購並放置道具（最多 8 個）。可選擇點擊道具再點擊棋格，或以拖曳方式放置與取消。</li>
-                <li><strong>對戰階段：</strong>各組輪流選擇對手的海域進行砲擊，未攻擊的海域顯示暗藍色。</li>
-                <li><strong>偵查與擊沉：</strong>天眼透露的綠底格子僅供情報顯示，仍需輪到回合點擊攻擊才算真正擊沉。</li>
+                <li><strong>配置階段：</strong>每組初始預算均為 $1000，依序選購並放置道具（最多 8 個）。<strong>注意：棋面上不能空白或只放置魚雷！</strong>可選擇點擊道具再點擊棋格，或以拖曳方式放置與取消。</li>
+                <li><strong>對戰階段：</strong>各組輪流選擇對手的海域進行砲擊，標題會同步提示目前進攻玩家。</li>
+                <li><strong>悔棋功能：</strong>對戰期間若操作失誤，可點擊【↩️ 悔棋】撤銷前一次攻擊。</li>
                 <li><strong>淘汰機制：</strong>當某一隊除了魚雷外的所有軍事資產皆被擊沉時，該隊淘汰！</li>
             </ul>
         </div>
@@ -212,18 +223,20 @@
             <input type="number" id="playerCount" min="2" max="6" value="3" onchange="generateBudgetInputs()">
         </div>
         <div id="budgetInputsContainer"></div>
-        <button onclick="startGameSetup()">進入主持人配置模式</button>
+        <button onclick="startGameSetup()">進入配置階段</button>
     </div>
 
     <!-- 2. 主遊戲畫面 -->
     <div id="gameScreen" class="game-screen hidden">
         <div class="game-header">
             <div>
-                <span id="gamePhaseText" style="font-size: 18px; color: #f1c40f; font-weight: bold;">[ 主持人配置階段 ]</span>
+                <span id="gamePhaseText" style="font-size: 18px; color: #f1c40f; font-weight: bold;">[ 配置階段 ]</span>
                 <div id="turnIndicator" class="status-bar hidden">目前輪到：<span id="currentTurnName" style="color:#e74c3c;">-</span> 攻擊</div>
             </div>
             <div>
+                <button id="prevSetupBtn" class="btn-prev-setup hidden" onclick="prevTeamSetup()">⬅️ 回到上一組配置</button>
                 <button id="nextSetupBtn" onclick="nextTeamSetup()" style="background-color: #3498db;">下一組 ➔</button>
+                <button id="undoBtn" class="btn-undo hidden" onclick="undoAttack()">↩️ 悔棋</button>
                 <button id="restartBtn" class="btn-restart hidden" onclick="confirmRestart()">🔄 重新開始 (保留配置)</button>
                 <button id="resetSetupBtn" class="btn-reset-setup hidden" onclick="confirmResetSetup()">↩️ 回到配置畫面 (不保留配置)</button>
             </div>
@@ -239,17 +252,17 @@
                     </div>
                     <div style="font-size:12px; color:#bdc3c7; margin-bottom:8px;">提示：可點選道具後點擊棋格，或直接拖曳放置。</div>
                     
-                    <div class="shop-item" id="item_scout" onclick="selectShopItem('scout', 1, 20)" draggable="true" ondragstart="drag(event, 'scout', 1, 20)">
-                        <span>📡 偵查哨 (1x1)</span><span style="color:#f1c40f;">$20</span>
+                    <div class="shop-item" id="item_scout" onclick="selectShopItem('scout', 1, 120)" draggable="true" ondragstart="drag(event, 'scout', 1, 120)">
+                        <span>📡 哨塔 (1x1)</span><span style="color:#f1c40f;">$120</span>
                     </div>
-                    <div class="shop-item" id="item_scoutShip" onclick="selectShopItem('scoutShip', 2, 25)" draggable="true" ondragstart="drag(event, 'scoutShip', 2, 25)">
-                        <span>🛶 偵查艦 (2x1)</span><span style="color:#f1c40f;">$25</span>
+                    <div class="shop-item" id="item_scoutShip" onclick="selectShopItem('scoutShip', 2, 150)" draggable="true" ondragstart="drag(event, 'scoutShip', 2, 150)">
+                        <span>🛶 偵查艦 (2x1)</span><span style="color:#f1c40f;">$150</span>
                     </div>
-                    <div class="shop-item" id="item_warship" onclick="selectShopItem('warship', 3, 40)" draggable="true" ondragstart="drag(event, 'warship', 3, 40)">
-                        <span>🚢 軍艦 (3x1)</span><span style="color:#f1c40f;">$40</span>
+                    <div class="shop-item" id="item_warship" onclick="selectShopItem('warship', 3, 250)" draggable="true" ondragstart="drag(event, 'warship', 3, 250)">
+                        <span>🚢 軍艦 (3x1)</span><span style="color:#f1c40f;">$250</span>
                     </div>
-                    <div class="shop-item" id="item_torpedo" onclick="selectShopItem('torpedo', 1, 15)" draggable="true" ondragstart="drag(event, 'torpedo', 1, 15)">
-                        <span>🚀 魚雷 (1x1)</span><span style="color:#f1c40f;">$15</span>
+                    <div class="shop-item" id="item_torpedo" onclick="selectShopItem('torpedo', 1, 100)" draggable="true" ondragstart="drag(event, 'torpedo', 1, 100)">
+                        <span>🚀 魚雷 (1x1)</span><span style="color:#f1c40f;">$100</span>
                     </div>
                 </div>
 
@@ -269,7 +282,7 @@
         </div>
 
         <div class="log-box" id="logBox">
-            <div class="log-entry">系統：遊戲已初始化，請主持人幫各組配置船艦（上限 8 個道具）。</div>
+            <div class="log-entry">系統：遊戲已初始化，請幫各組配置船艦（上限 8 個道具）。</div>
         </div>
     </div>
 
@@ -281,22 +294,96 @@
     </div>
 
     <script>
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        function playSound(type) {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const now = ctx.currentTime;
+
+                if (type === 'hit') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'miss') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'scout') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'warship') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(250, now + 0.2);
+                    osc.frequency.linearRampToValueAtTime(200, now + 0.5);
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                }
+            } catch(e) { console.log(e); }
+        }
+
         const ITEM_CONFIGS = {
-            scout: { name: '偵查哨', icon: '📡', size: 1, cost: 20, borderClass: 'border-scout' },
-            scoutShip: { name: '偵查艦', icon: '🛶', size: 2, cost: 25, borderClass: 'border-scoutShip' },
-            warship: { name: '軍艦', icon: '🚢', size: 3, cost: 40, borderClass: 'border-warship' },
-            torpedo: { name: '魚雷', icon: '🚀', size: 1, cost: 15, borderClass: 'border-torpedo' }
+            scout: { name: '哨塔', icon: '📡', size: 1, cost: 120, borderClass: 'border-scout' },
+            scoutShip: { name: '偵查艦', icon: '🛶', size: 2, cost: 150, borderClass: 'border-scoutShip' },
+            warship: { name: '軍艦', icon: '🚢', size: 3, cost: 250, borderClass: 'border-warship' },
+            torpedo: { name: '魚雷', icon: '🚀', size: 1, cost: 100, borderClass: 'border-torpedo' }
         };
 
         let totalTeams = 3;
         let teams = {}; 
         let currentSetupIndex = 1;
         let currentOrientation = 'H';
-        let selectedTool = null; // 當前選取的道具工具
+        let selectedTool = null;
         let isBattlePhase = false;
+        let isGameOver = false;
         let currentTurnTeamId = 1;
         let revengeState = null;
         let dragData = null;
+        let historyStack = [];
 
         const rowLabels = ['1', '2', '3', '4', '5', '6'];
         const colLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -317,7 +404,7 @@
                         <label>第 ${i} 組 名稱與初始預算 ($)：</label>
                         <div class="team-input-row">
                             <input type="text" id="name_t${i}" value="第 ${i} 組" placeholder="組別名稱" style="flex: 2;">
-                            <input type="number" id="budget_t${i}" min="0" value="100" style="flex: 1;">
+                            <input type="number" id="budget_t${i}" min="0" value="1000" style="flex: 1;">
                         </div>
                     </div>
                 `;
@@ -329,7 +416,7 @@
             
             for(let i = 1; i <= totalTeams; i++) {
                 const teamName = document.getElementById(`name_t${i}`).value.trim() || `第 ${i} 組`;
-                const initBudget = parseInt(document.getElementById(`budget_t${i}`).value) || 100;
+                const initBudget = parseInt(document.getElementById(`budget_t${i}`).value) || 1000;
                 teams[i] = {
                     id: i,
                     name: teamName,
@@ -349,10 +436,26 @@
             updateSetupView();
         }
 
+        function clearTeamSetup(teamId) {
+            const initBudget = parseInt(document.getElementById(`budget_t${teamId}`)?.value) || 1000;
+            teams[teamId].budget = initBudget;
+            teams[teamId].itemCount = 0;
+            teams[teamId].grid = Array(6).fill(null).map(() => Array(6).fill(null));
+            teams[teamId].hits = Array(6).fill(null).map(() => Array(6).fill(false));
+            teams[teamId].revealed = Array(6).fill(null).map(() => Array(6).fill(false));
+        }
+
         function updateSetupView() {
             const currentTeam = teams[currentSetupIndex];
             document.getElementById('currentSetupTeamName').innerText = currentTeam.name;
             
+            const prevBtn = document.getElementById('prevSetupBtn');
+            if (currentSetupIndex > 1) {
+                prevBtn.classList.remove('hidden');
+            } else {
+                prevBtn.classList.add('hidden');
+            }
+
             const nextBtn = document.getElementById('nextSetupBtn');
             if (currentSetupIndex < totalTeams) {
                 nextBtn.innerText = `下一組 (${teams[currentSetupIndex + 1].name}) ➔`;
@@ -367,12 +470,41 @@
             updateStatusDisplay();
         }
 
+        function validateCurrentTeamPlacement() {
+            const currentTeam = teams[currentSetupIndex];
+            let nonTorpedoCount = 0;
+            for (let r = 0; r < 6; r++) {
+                for (let c = 0; c < 6; c++) {
+                    const item = currentTeam.grid[r][c];
+                    if (item && item.type !== 'torpedo') {
+                        nonTorpedoCount++;
+                    }
+                }
+            }
+            if (nonTorpedoCount === 0) {
+                alert(`❌ 棋面上不能空白或只放置魚雷`);
+                return false;
+            }
+            return true;
+        }
+
         function nextTeamSetup() {
+            if (!validateCurrentTeamPlacement()) return;
+
             if (currentSetupIndex < totalTeams) {
                 currentSetupIndex++;
                 updateSetupView();
             } else {
                 switchPhase();
+            }
+        }
+
+        function prevTeamSetup() {
+            if (currentSetupIndex > 1) {
+                currentSetupIndex--;
+                clearTeamSetup(currentSetupIndex);
+                log(`↩️ 回到 [${teams[currentSetupIndex].name}]，該組已清空並重新配置。`);
+                updateSetupView();
             }
         }
 
@@ -486,7 +618,7 @@
             currentTeam.budget -= toolData.cost;
             currentTeam.itemCount += 1;
 
-            log(`🔧 主持人幫 [${currentTeam.name}] 部署了 ${ITEM_CONFIGS[toolData.type].name}，花費 $${toolData.cost}`);
+            log(`🔧 [${currentTeam.name}] 部署了 ${ITEM_CONFIGS[toolData.type].name}，花費 $${toolData.cost}`);
             
             renderSetupBoard();
             updateStatusDisplay();
@@ -542,7 +674,6 @@
                             updateStatusDisplay();
                         };
                     } else {
-                        // 空白格點擊放置選中的道具
                         cell.onclick = () => {
                             if (selectedTool) {
                                 placeItemAt(r, c, selectedTool);
@@ -563,14 +694,16 @@
                 const currentTeam = teams[i];
                 
                 let activeClass = '';
-                if (revengeState) {
-                    if (currentTeam.id === revengeState.victimId) {
+                if (!isGameOver) {
+                    if (revengeState) {
+                        if (currentTeam.id === revengeState.victimId) {
+                            activeClass = 'active-turn';
+                        } else if (currentTeam.id === revengeState.attackerId) {
+                            activeClass = 'revenge-target';
+                        }
+                    } else if (currentTeam.id === currentTurnTeamId) {
                         activeClass = 'active-turn';
-                    } else if (currentTeam.id === revengeState.attackerId) {
-                        activeClass = 'revenge-target';
                     }
-                } else if (currentTeam.id === currentTurnTeamId) {
-                    activeClass = 'active-turn';
                 }
 
                 const container = document.createElement('div');
@@ -596,31 +729,54 @@
                         const cell = document.createElement('div');
                         cell.className = 'cell';
                         
-                        cell.onclick = () => handleCellClick(currentTeam.id, r, c);
+                        if (!isGameOver) {
+                            cell.onclick = () => handleCellClick(currentTeam.id, r, c);
+                        }
 
                         const item = currentTeam.grid[r][c];
                         const isHit = currentTeam.hits[r][c];
                         const isRevealed = currentTeam.revealed[r][c];
 
-                        if (isHit) {
-                            if (item) {
-                                cell.classList.add('hit');
-                                cell.innerText = ITEM_CONFIGS[item.type].icon;
-                                cell.classList.add(ITEM_CONFIGS[item.type].borderClass);
+                        if (isGameOver) {
+                            if (isHit) {
+                                if (item) {
+                                    cell.classList.add('hit');
+                                    cell.innerText = ITEM_CONFIGS[item.type].icon;
+                                    cell.classList.add(ITEM_CONFIGS[item.type].borderClass);
+                                } else {
+                                    cell.classList.add('miss');
+                                    cell.innerText = '💦';
+                                }
                             } else {
-                                cell.classList.add('miss');
-                                cell.innerText = '💦';
+                                if (item) {
+                                    cell.classList.add('revealed-end');
+                                    cell.innerText = ITEM_CONFIGS[item.type].icon;
+                                    cell.classList.add(ITEM_CONFIGS[item.type].borderClass);
+                                } else {
+                                    cell.innerText = '';
+                                }
                             }
-                        } else if (isRevealed) {
-                            cell.classList.add('scouted');
-                            if (item) {
-                                cell.innerText = ITEM_CONFIGS[item.type].icon;
-                                cell.title = `偵查天眼透視：${ITEM_CONFIGS[item.type].name} (需點擊攻擊才算擊沉)`;
+                        } else {
+                            if (isHit) {
+                                if (item) {
+                                    cell.classList.add('hit');
+                                    cell.innerText = ITEM_CONFIGS[item.type].icon;
+                                    cell.classList.add(ITEM_CONFIGS[item.type].borderClass);
+                                } else {
+                                    cell.classList.add('miss');
+                                    cell.innerText = '💦';
+                                }
+                            } else if (isRevealed) {
+                                cell.classList.add('scouted');
+                                if (item) {
+                                    cell.innerText = ITEM_CONFIGS[item.type].icon;
+                                    cell.title = `偵查天眼透視：${ITEM_CONFIGS[item.type].name} (需點擊攻擊才算擊沉)`;
+                                } else {
+                                    cell.innerText = '';
+                                }
                             } else {
                                 cell.innerText = '';
                             }
-                        } else {
-                            cell.innerText = '';
                         }
                         board.appendChild(cell);
                     }
@@ -688,19 +844,48 @@
         function switchPhase() {
             if (!isBattlePhase) {
                 isBattlePhase = true;
-                document.getElementById('gamePhaseText').innerText = "💥 [ 戰鬥對戰階段 ]";
-                document.getElementById('gamePhaseText').style.color = "#e74c3c";
+                isGameOver = false;
                 document.getElementById('setupArea').classList.add('hidden');
                 document.getElementById('nextSetupBtn').classList.add('hidden');
+                document.getElementById('prevSetupBtn').classList.add('hidden');
                 document.getElementById('restartBtn').classList.remove('hidden');
                 document.getElementById('resetSetupBtn').classList.remove('hidden');
+                document.getElementById('undoBtn').classList.remove('hidden');
                 document.getElementById('battleArea').classList.remove('hidden');
                 document.getElementById('turnIndicator').classList.remove('hidden');
                 
                 currentTurnTeamId = 1;
+                historyStack = [];
                 determineNextActiveTurn();
                 log(`⚔️ 戰鬥正式開始！所有人配置已進入隱蔽迷霧，全場盤面已並排秀出。`);
             }
+        }
+
+        function saveGameState() {
+            const state = {
+                currentTurnTeamId: currentTurnTeamId,
+                revengeState: revengeState ? JSON.parse(JSON.stringify(revengeState)) : null,
+                teams: JSON.parse(JSON.stringify(teams))
+            };
+            historyStack.push(state);
+        }
+
+        function undoAttack() {
+            if (isGameOver) {
+                alert("⚠️ 遊戲已結束，無法發動悔棋！");
+                return;
+            }
+            if (historyStack.length === 0) {
+                alert("⚠️ 目前沒有可悔棋的攻擊記錄！");
+                return;
+            }
+            const prevState = historyStack.pop();
+            currentTurnTeamId = prevState.currentTurnTeamId;
+            revengeState = prevState.revengeState;
+            teams = prevState.teams;
+
+            log(`↩️ 玩家發動悔棋！已成功回溯至前一次攻擊點位。`);
+            determineNextActiveTurn();
         }
 
         function confirmRestart() {
@@ -711,8 +896,10 @@
 
         function resetGameKeepLayout() {
             isBattlePhase = true;
+            isGameOver = false;
             revengeState = null;
             currentTurnTeamId = 1;
+            historyStack = [];
 
             for (let i = 1; i <= totalTeams; i++) {
                 teams[i].eliminated = false;
@@ -725,31 +912,28 @@
         }
 
         function confirmResetSetup() {
-            showOverlay("⚠️ 回到配置畫面 (不保留配置)？", "此操作將清空目前所有組別的戰鬥狀態與配置盤面，並回到第一組的配置模式讓您重新買裝部署。", () => {
+            showOverlay("⚠️ 回到配置畫面 (不保留配置)？", "此操作將清空目前所有組別的戰鬥狀態與配置盤面，並回到第一組讓您重新買裝部署。", () => {
                 resetToSetupMode();
             }, false, true);
         }
 
         function resetToSetupMode() {
             isBattlePhase = false;
+            isGameOver = false;
             revengeState = null;
             currentSetupIndex = 1;
+            historyStack = [];
 
             for (let i = 1; i <= totalTeams; i++) {
-                const initBudget = parseInt(document.getElementById(`budget_t${i}`)?.value) || 100;
-                teams[i].budget = initBudget;
-                teams[i].itemCount = 0;
-                teams[i].eliminated = false;
-                teams[i].grid = Array(6).fill(null).map(() => Array(6).fill(null));
-                teams[i].hits = Array(6).fill(null).map(() => Array(6).fill(false));
-                teams[i].revealed = Array(6).fill(null).map(() => Array(6).fill(false));
+                clearTeamSetup(i);
             }
 
-            document.getElementById('gamePhaseText').innerText = "[ 主持人配置階段 ]";
+            document.getElementById('gamePhaseText').innerText = "[ 配置階段 ]";
             document.getElementById('gamePhaseText').style.color = "#f1c40f";
             document.getElementById('battleArea').classList.add('hidden');
             document.getElementById('restartBtn').classList.add('hidden');
             document.getElementById('resetSetupBtn').classList.add('hidden');
+            document.getElementById('undoBtn').classList.add('hidden');
             document.getElementById('turnIndicator').classList.add('hidden');
             document.getElementById('setupArea').classList.remove('hidden');
             document.getElementById('nextSetupBtn').classList.remove('hidden');
@@ -759,17 +943,30 @@
         }
 
         function determineNextActiveTurn() {
+            if (isGameOver) return;
+
             let loops = 0;
             while (teams[currentTurnTeamId].eliminated && loops < totalTeams) {
                 currentTurnTeamId = (currentTurnTeamId % totalTeams) + 1;
                 loops++;
             }
-            document.getElementById('currentTurnName').innerText = teams[currentTurnTeamId].name;
+            
+            if (revengeState) {
+                const victimName = teams[revengeState.victimId].name;
+                document.getElementById('gamePhaseText').innerText = `💥 [ 死鬥反擊 - 由玩家 ${victimName} 進行反擊 ]`;
+                document.getElementById('gamePhaseText').style.color = "#e74c3c";
+                document.getElementById('currentTurnName').innerText = victimName;
+            } else {
+                const activePlayerName = teams[currentTurnTeamId].name;
+                document.getElementById('gamePhaseText').innerText = `💥 [ 戰鬥階段 - 目前回合：${activePlayerName} ]`;
+                document.getElementById('gamePhaseText').style.color = "#e74c3c";
+                document.getElementById('currentTurnName').innerText = activePlayerName;
+            }
             renderBattleArea();
         }
 
         function handleCellClick(targetTeamId, r, c) {
-            if (!isBattlePhase) return;
+            if (!isBattlePhase || isGameOver) return;
             
             const targetTeam = teams[targetTeamId];
             const attacker = teams[currentTurnTeamId];
@@ -779,6 +976,7 @@
                     alert(`🚨 復仇限制：請點選攻擊者 [${teams[revengeState.attackerId].name}] 的紅框盤面進行反擊！`);
                     return;
                 }
+                saveGameState();
                 executeRevengeAttack(r, c);
                 return;
             }
@@ -798,14 +996,18 @@
                 return;
             }
 
+            saveGameState();
+
             targetTeam.hits[r][c] = true;
             const item = targetTeam.grid[r][c];
             const coordStr = `${colLabels[c]}${rowLabels[r]}`;
 
             if (item) {
+                playSound('hit');
                 log(`💥 [${attacker.name}] 成功轟炸 [${targetTeam.name}] 的 (${coordStr})，發現 ${ITEM_CONFIGS[item.type].name}！`);
                 checkSpecialRules(item, targetTeam, r, c, attacker, coordStr);
             } else {
+                playSound('miss');
                 log(`💦 [${attacker.name}] 砲擊 [${targetTeam.name}] 的 (${coordStr}) 落入海中激起水花。`);
                 proceedToNextTurn();
             }
@@ -843,11 +1045,9 @@
                 log(`🚢 戰報：[${targetTeam.name}] 的 ${ITEM_CONFIGS[item.type].name} 已被徹底擊沉！`);
 
                 if (item.type === 'scoutShip') {
+                    playSound('scout');
                     let posText = scoutShipPositions.map(p => `${colLabels[p.c]}${rowLabels[p.r]}`).join('、');
-                    showOverlay("📡 偵查天眼開啟", `[${targetTeam.name}] 的偵查艦被擊沉！
-該偵查艦 (2x1) 所在位置 (${posText}) 啟動偵查天眼！
-
-全場所有對手該位置的道具將以「綠底」公開透視，其他組別仍須點選攻擊才算擊沉。`, () => {
+                    showOverlay("📡 偵查天眼開啟", `[${targetTeam.name}] 的偵查艦被擊沉！\n該偵查艦 (2x1) 所在位置 (${posText}) 啟動偵查天眼！\n\n全場所有對手該位置的道具將以「綠底」公開透視，其他組別仍須點選攻擊才算擊沉。`, () => {
                         for(let i=1; i<=totalTeams; i++) {
                             scoutShipPositions.forEach(pos => {
                                 teams[i].revealed[pos.r][pos.c] = true;
@@ -861,13 +1061,14 @@
                 }
 
                 if (item.type === 'warship') {
+                    playSound('warship');
                     revengeState = {
                         victimId: targetTeam.id,
                         attackerId: attacker.id
                     };
                     const descText = `<span style="color:#e74c3c; font-weight:bold;">${targetTeam.name}</span> 軍艦被擊沉，由 <span style="color:#f1c40f; font-weight:bold;">${targetTeam.name}</span> 進行反擊 <span style="color:#e74c3c; font-weight:bold;">${attacker.name}</span> 一次`;
                     showOverlay("⚔️ 鐵甲巨艦死鬥反擊", descText, null, true);
-                    renderBattleArea();
+                    determineNextActiveTurn();
                     return;
                 }
             }
@@ -884,8 +1085,10 @@
             const coordStr = `${colLabels[c]}${rowLabels[r]}`;
 
             if (item) {
+                playSound('hit');
                 log(`🔥 復仇奇襲！[${victim.name}] 臨死反撲成功！重創 [${attacker.name}] 的 (${coordStr}) 座標，炸出 ${ITEM_CONFIGS[item.type].name}！`);
             } else {
+                playSound('miss');
                 log(`💦 復仇反擊！[${victim.name}] 射出的炮彈偏離，在 [${attacker.name}] 的 (${coordStr}) 激起落空水花。`);
             }
 
@@ -933,9 +1136,12 @@
             }
 
             if (activeTeams.length === 1) {
-                showOverlay("🏆 榮耀終局 🏆", `恭喜 【${activeTeams[0].name}】 在這場驚險的微型海戰中，擊潰群雄，成為場上最終倖存的第一名！`, () => {
-                    location.reload();
-                });
+                isGameOver = true;
+                document.getElementById('gamePhaseText').innerText = `🏆 [ 遊戲結束 - 勝利者：${activeTeams[0].name} ]`;
+                document.getElementById('gamePhaseText').style.color = "#f1c40f";
+                renderBattleArea();
+
+                showOverlay("🏆 榮耀終局 🏆", `恭喜 【${activeTeams[0].name}】 在這場驚險的微型海戰中，擊潰群雄，成為場上最終倖存的第一名！\n\n(場上所有隱藏的配置已全部揭曉)`, () => {});
             }
         }
 
